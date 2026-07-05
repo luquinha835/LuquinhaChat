@@ -1,73 +1,191 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Luquinha Chat</title>
-<style>
-body{margin:0;font-family:Arial;background:#202123;color:#fff;display:flex;justify-content:center;align-items:center;height:100vh}
-#app{width:95%;max-width:900px;height:90vh;background:#2b2d31;border-radius:12px;display:flex;flex-direction:column}
-header{padding:15px;background:#5865F2;text-align:center;font-size:24px;font-weight:bold}
-#msgs{flex:1;overflow:auto;padding:15px}
-.msg{background:#3a3d44;margin:8px 0;padding:10px;border-radius:8px}
-small{color:#8ec5ff}
-footer{display:flex}
-input{flex:1;padding:14px;border:none}
-button{padding:14px 20px;border:none;background:#5865F2;color:#fff;cursor:pointer}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Firebase</title>
+    
+    <!-- AQUI ESTÁ O SEU CSS JUNTO COM O HTML -->
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: #121212; 
+            color: #e0e0e0; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px; 
+        }
+        h2 {
+            margin-bottom: 20px;
+            color: #ffffff;
+        }
+        #chat-container {
+            width: 100%;
+            max-width: 500px;
+            background: #1e1e1e;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+        }
+        #chat-box { 
+            width: 100%; 
+            height: 350px; 
+            background: #2a2a2a; 
+            overflow-y: auto; 
+            padding: 15px; 
+            border-radius: 8px; 
+            margin-bottom: 15px; 
+            border: 1px solid #3a3a3a;
+        }
+        .mensagem { 
+            margin-bottom: 12px; 
+            padding: 8px 12px; 
+            border-radius: 8px;
+            background: #333333;
+            word-break: break-word;
+            line-height: 1.4;
+        }
+        .usuario { 
+            font-weight: bold; 
+            color: #00adb5; 
+            display: block;
+            margin-bottom: 4px;
+            font-size: 0.9em;
+        }
+        .controles {
+            display: flex; 
+            gap: 8px; 
+        }
+        select, input, button { 
+            padding: 12px; 
+            font-size: 15px; 
+            border-radius: 6px; 
+            border: 1px solid #3a3a3a; 
+            background: #2a2a2a;
+            color: #fff;
+            outline: none;
+        }
+        select {
+            cursor: pointer;
+        }
+        input { 
+            flex-grow: 1; 
+        }
+        input:focus {
+            border-color: #00adb5;
+        }
+        button { 
+            background: #00adb5; 
+            color: #121212; 
+            font-weight: bold;
+            cursor: pointer; 
+            transition: background 0.2s;
+            border: none;
+        }
+        button:hover { 
+            background: #00fff5; 
+        }
+    </style>
 </head>
 <body>
-<div id="app">
-<header>💬 Luquinha Chat</header>
-<div id="msgs">
-<div class="msg"><small>Sistema</small><br>Substitua o bloco firebaseConfig abaixo pelo seu (se necessário) e habilite o Firestore.</div>
-</div>
-<footer>
-<input id="txt" placeholder="Digite uma mensagem...">
-<button onclick="enviar()">Enviar</button>
-</footer>
-</div>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
-import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
+    <div id="chat-container">
+        <h2>Chat em Tempo Real</h2>
 
-const firebaseConfig={
- apiKey:"AIzaSyAfICcM31eGaIvpLK7KhGxF0H6rw9npAg",
- authDomain:"luquinhachat.firebaseapp.com",
- projectId:"luquinhachat",
- storageBucket:"luquinhachat.firebasestorage.app",
- messagingSenderId:"161156552397",
- appId:"1:161156552397:web:de6319a15eae1a7a44bb84",
- measurementId:"G-T1KH4E9D0D"
-};
+        <!-- Caixa de Mensagens -->
+        <div id="chat-box"></div>
 
-const app=initializeApp(firebaseConfig);
-const db=getFirestore(app);
-const nome=localStorage.nome||prompt("Seu nome:")||"Anônimo";
-localStorage.nome=nome;
-const msgs=document.getElementById("msgs");
-const q=query(collection(db,"mensagens"),orderBy("dataEnvio"));
+        <!-- Controles de Envio -->
+        <div class="controles">
+            <!-- Seletor para alternar entre os 3 usuários -->
+            <select id="user-select">
+                <option value="@Luquinha">@Luquinha</option>
+                <option value="@Viquinho">@Viquinho</option>
+                <option value="@Francisquinho">@Francisquinho</option>
+            </select>
+            
+            <input type="text" id="msg-input" placeholder="Digite sua mensagem...">
+            <button id="send-btn">Enviar</button>
+        </div>
+    </div>
 
-onSnapshot(q,snap=>{
- msgs.innerHTML="";
- snap.forEach(doc=>{
-  const d=doc.data();
-  msgs.innerHTML+=`<div class="msg"><small>${d.usuario||"?"}</small><br>${d.texto||""}</div>`;
- });
- msgs.scrollTop=msgs.scrollHeight;
-});
+    <!-- Importação dos Módulos do Firebase (v10+) -->
+    <script type="module">
+        import { initializeApp } from "https://gstatic.com";
+        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://gstatic.com";
 
-window.enviar=async()=>{
- const t=document.getElementById("txt");
- if(!t.value.trim())return;
- await addDoc(collection(db,"mensagens"),{
-   usuario:nome,
-   texto:t.value,
-   dataEnvio:serverTimestamp()
- });
- t.value="";
-}
-document.getElementById("txt").addEventListener("keydown",e=>{if(e.key==="Enter")enviar();});
-</script>
-</body></html>
+        // CONFIGURAÇÃO DO SEU FIREBASE (Substitua pelos seus dados do console do Firebase)
+        const firebaseConfig = {
+            apiKey: "SUA_API_KEY",
+            authDomain: "SEU_PROJECT_://firebaseapp.com",
+            projectId: "SEU_PROJECT_ID",
+            storageBucket: "SEU_PROJECT_://appspot.com",
+            messagingSenderId: "SEU_SENDER_ID",
+            appId: "SEU_APP_ID"
+        };
+
+        // Inicializa o Firebase e o Firestore
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const mensagensRef = collection(db, "mensagens");
+
+        // Elementos do HTML
+        const chatBox = document.getElementById("chat-box");
+        const msgInput = document.getElementById("msg-input");
+        const userSelect = document.getElementById("user-select");
+        const sendBtn = document.getElementById("send-btn");
+
+        // 1. ESCUTAR MENSAGENS EM TEMPO REAL
+        const q = query(mensagensRef, orderBy("dataEnvio", "asc"));
+        
+        onSnapshot(q, (snapshot) => {
+            chatBox.innerHTML = ""; // Limpa a tela antes de recarregar
+            snapshot.forEach((doc) => {
+                const dados = doc.data();
+                
+                // Cria a estrutura visual da mensagem com o CSS aplicado
+                const msgDiv = document.createElement("div");
+                msgDiv.className = "mensagem";
+                msgDiv.innerHTML = `<span class="usuario">${dados.usuario}</span>${dados.texto}`;
+                
+                chatBox.appendChild(msgDiv);
+            });
+            // Rola o chat automaticamente para o final
+            chatBox.scrollTop = chatBox.scrollHeight;
+        });
+
+        // 2. ENVIAR NOVA MENSAGEM PARA O FIRESTORE
+        async function enviarMensagem() {
+            const textoMensagem = msgInput.value.trim();
+            const usuarioSelecionado = userSelect.value;
+
+            if (textoMensagem !== "") {
+                try {
+                    await addDoc(mensagensRef, {
+                        texto: textoMensagem,
+                        usuario: usuarioSelecionado,
+                        dataEnvio: serverTimestamp()
+                    });
+                    msgInput.value = ""; // Limpa o campo de digitação
+                } catch (error) {
+                    console.error("Erro ao enviar mensagem: ", error);
+                }
+            }
+        }
+
+        // Eventos de clique e tecla Enter
+        sendBtn.addEventListener("click", enviarMensagem);
+        msgInput.addEventListener("keypress", (e) => {
+            if (e.key === "Enter") enviarMensagem();
+        });
+    </script>
+</body>
+</html>

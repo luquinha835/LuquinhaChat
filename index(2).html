@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Luquinha Chat</title>
+<style>
+body{margin:0;font-family:Arial;background:#202123;color:#fff;display:flex;justify-content:center;align-items:center;height:100vh}
+#app{width:95%;max-width:900px;height:90vh;background:#2b2d31;border-radius:12px;display:flex;flex-direction:column}
+header{padding:15px;background:#5865F2;text-align:center;font-size:24px;font-weight:bold}
+#msgs{flex:1;overflow:auto;padding:15px}
+.msg{background:#3a3d44;margin:8px 0;padding:10px;border-radius:8px}
+small{color:#8ec5ff}
+footer{display:flex}
+input{flex:1;padding:14px;border:none}
+button{padding:14px 20px;border:none;background:#5865F2;color:#fff;cursor:pointer}
+</style>
+</head>
+<body>
+<div id="app">
+<header>💬 Luquinha Chat</header>
+<div id="msgs">
+<div class="msg"><small>Sistema</small><br>Substitua o bloco firebaseConfig abaixo pelo seu (se necessário) e habilite o Firestore.</div>
+</div>
+<footer>
+<input id="txt" placeholder="Digite uma mensagem...">
+<button onclick="enviar()">Enviar</button>
+</footer>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
+
+const firebaseConfig={
+ apiKey:"AIzaSyAfICcM31eGaIvpLK7KhGxF0H6rw9npAg",
+ authDomain:"luquinhachat.firebaseapp.com",
+ projectId:"luquinhachat",
+ storageBucket:"luquinhachat.firebasestorage.app",
+ messagingSenderId:"161156552397",
+ appId:"1:161156552397:web:de6319a15eae1a7a44bb84",
+ measurementId:"G-T1KH4E9D0D"
+};
+
+const app=initializeApp(firebaseConfig);
+const db=getFirestore(app);
+const nome=localStorage.nome||prompt("Seu nome:")||"Anônimo";
+localStorage.nome=nome;
+const msgs=document.getElementById("msgs");
+const q=query(collection(db,"mensagens"),orderBy("dataEnvio"));
+
+onSnapshot(q,snap=>{
+ msgs.innerHTML="";
+ snap.forEach(doc=>{
+  const d=doc.data();
+  msgs.innerHTML+=`<div class="msg"><small>${d.usuario||"?"}</small><br>${d.texto||""}</div>`;
+ });
+ msgs.scrollTop=msgs.scrollHeight;
+});
+
+window.enviar=async()=>{
+ const t=document.getElementById("txt");
+ if(!t.value.trim())return;
+ await addDoc(collection(db,"mensagens"),{
+   usuario:nome,
+   texto:t.value,
+   dataEnvio:serverTimestamp()
+ });
+ t.value="";
+}
+document.getElementById("txt").addEventListener("keydown",e=>{if(e.key==="Enter")enviar();});
+</script>
+</body></html>
